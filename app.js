@@ -1,9 +1,8 @@
 const express = require('express');
+const defaultRoutes = require('./routes/default');
 
 const app = express();
 
-app.get('/', function(req,res){
- res.send('<h1>Hello Warudo');
-})
+app.use('/', defaultRoutes);
 
 app.listen(3000);
