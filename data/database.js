@@ -1,6 +1,6 @@
 const mongo = require('mongodb');
 
-const MongoClient = mongo.MongoClient();
+const MongoClient = mongo.MongoClient;
 
 let database;
 
