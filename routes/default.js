@@ -10,6 +10,10 @@ router.get('/', function(req,res) {
 });
 
 router.get('/admin', function(req,res) {
+    if(!req.session.isAuthenticated) {
+        return res.status(401).render('401');
+    }
+
     const inputData = {
         message: ''
     }
@@ -70,6 +74,33 @@ router.get('/login', function(req,res) {
     const csrfToken = req.csrfToken();
 
     res.render('login', {inputData: inputData, csrfToken: csrfToken});
+});
+
+router.post('/login', async function(req,res){
+    const data = req.body;
+
+    const inputMail = data.email;
+    const password = data.password;
+
+    const existingUser = await db.getDb().collection('users').findOne({email: inputMail});
+
+    if(!existingUser) {
+        console.log("User don't exist in db");
+        return res.redirect('/login');
+    }
+
+    const passMatch = await bcrypt.compare(password, existingUser.password);
+
+    if(!passMatch) {
+        console.log('Wrong Password');
+        res.redirect('/login');
+    }
+
+    req.session.user = {id: existingUser._id.toString(), email: existingUser.email};
+    req.session.isAuthenticated = true;
+    req.session.save(function(){
+        res.redirect('/admin');
+    });
 });
 
 router.post('/logout', function(req,res) {
