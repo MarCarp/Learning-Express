@@ -104,6 +104,9 @@ router.post('/login', async function(req,res){
 });
 
 router.post('/logout', function(req,res) {
+    req.session.user = null;
+    res.session.isAuthenticated = false;
+    
     res.redirect('/');
 });
 
