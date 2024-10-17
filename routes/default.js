@@ -26,13 +26,22 @@ router.get('/admin', function(req,res) {
 });
 
 router.get('/signup', function(req,res) {
-    const inputData = {
-        message: '',
-    };
+    let sessionInputData = req.session.inputData;
+
+    if(!sessionInputData) {
+        sessionInputData = {
+            hasError: false,
+            email: '',
+            confirmEmail: '',
+            password: ''
+        }
+    }
+
+    req.session.inputData = null;
 
     const csrfToken = req.csrfToken();
 
-    res.render('signup', {inputData: inputData, csrfToken: csrfToken});
+    res.render('signup', {inputData: sessionInputData, csrfToken: csrfToken});
 });
 
 router.post('/signup', async function(req,res){
@@ -42,9 +51,25 @@ router.post('/signup', async function(req,res){
     const mailConfirm = data['confirm-email'];
     const inputPass = data.password;
 
-    if(inputMail !== mailConfirm) {
-        console.log('mail not match');
-        return res.redirect('/signup');
+    if(!inputMail ||
+        !mailConfirm ||
+        !inputPass ||
+        !inputPass.trim() < 6 ||
+        inputMail !== mailConfirm ||
+        !inputMail.includes('@')
+    ) {
+        req.session.inputData = {
+            hasError: true,
+            message: 'Invalid input - Check your data',
+            email: inputMail,
+            confirmEmail: mailConfirm,
+            password: inputPass
+        };
+
+        req.session.save(function(){
+            res.redirect('/signup');
+        });
+        return;
     }
 
     const existingUser = await db.getDb().collection('users').findOne({email: data.mail});
@@ -106,7 +131,7 @@ router.post('/login', async function(req,res){
 router.post('/logout', function(req,res) {
     req.session.user = null;
     res.session.isAuthenticated = false;
-    
+
     res.redirect('/');
 });
 
